@@ -1,23 +1,103 @@
 from http import HTTPStatus
 
-from fastapi.testclient import TestClient
 
-from fast_zero.app import app
-
-
-def test_root_should_return_ok_and_hello_world():
-    client = TestClient(app)
-
+def test_root_should_return_ok_and_hello_world(client):
     response = client.get('/')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'Hello World :)'}
 
 
-def test_html_hello_world_works_well(hello_world_html_string):
-    client = TestClient(app)
-
-    response = client.get('/html_hello_world')
+def test_html_hello_world_works_well(client, hello_world_html_string):
+    response = client.get('/html_hello_world/')
 
     assert response.status_code == HTTPStatus.OK
     assert response.text == hello_world_html_string
+
+
+def test_create_user(client):
+    response = client.post(
+        '/users/',
+        json={
+            'username': 'arnaldo',
+            'email': 'arnaldo@example.com',
+            'password': 'secret',
+        },
+    )
+    assert response.status_code == HTTPStatus.CREATED
+    assert response.json() == {
+        'username': 'arnaldo',
+        'email': 'arnaldo@example.com',
+        'id': 1,
+    }
+
+
+def test_read_users(client):
+    response = client.get('/users/')
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'users': [
+            {
+                'username': 'arnaldo',
+                'email': 'arnaldo@example.com',
+                'id': 1,
+            }
+        ]
+    }
+
+
+def test_read_single_user(client):
+    response = client.get('/users/1')
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'username': 'arnaldo',
+        'email': 'arnaldo@example.com',
+        'id': 1,
+    }
+
+
+def test_read_single_user_not_found(client):
+    response = client.get('/users/322')
+    assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_update_user(client):
+    response = client.put(
+        '/users/1',
+        json={
+            'username': 'vitor',
+            'email': 'vitor@example.com',
+            'password': 'mynewpassword',
+        },
+    )
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'username': 'vitor',
+        'email': 'vitor@example.com',
+        'id': 1,
+    }
+
+
+def test_update_user_not_found(client):
+    response = client.put(
+        '/users/322',
+        json={
+            'username': 'vitor',
+            'email': 'vitor@example.com',
+            'password': 'mynewpassword',
+        },
+    )
+    assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_delete_user(client):
+    response = client.delete('/users/1')
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {'message': 'User deleted'}
+
+
+def test_delete_user_not_found(client):
+    response = client.delete('/users/322')
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
