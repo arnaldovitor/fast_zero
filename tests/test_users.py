@@ -3,7 +3,9 @@ from http import HTTPStatus
 from fast_zero.schemas import UserPublic
 
 
-def test_create_user(client):
+def test_create_user(
+    client,
+):
     response = client.post(
         '/users/',
         json={
@@ -24,7 +26,7 @@ def test_create_user_username_already_exists(client, user):
     response = client.post(
         '/users/',
         json={
-            'username': 'arnaldo',
+            'username': user.username,
             'email': 'vitor@example.com',
             'password': 'secret',
         },
@@ -40,7 +42,7 @@ def test_create_user_email_already_exists(client, user):
         '/users/',
         json={
             'username': 'vitor',
-            'email': 'arnaldo@example.com',
+            'email': user.email,
             'password': 'secret',
         },
     )
@@ -66,9 +68,9 @@ def test_read_single_user(client, user):
     response = client.get('/users/1')
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
-        'username': 'arnaldo',
-        'email': 'arnaldo@example.com',
-        'id': 1,
+        'username': user.username,
+        'email': user.email,
+        'id': user.id,
     }
 
 
@@ -95,9 +97,9 @@ def test_update_user(client, user, token):
     }
 
 
-def test_update_user_wrong_user(client, token):
+def test_update_user_wrong_user(client, other_user, token):
     response = client.put(
-        '/users/322',
+        f'/users/{other_user.id}',
         headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'vitor',
@@ -118,9 +120,9 @@ def test_delete_user(client, user, token):
     assert response.json() == {'message': 'User deleted'}
 
 
-def test_delete_user_wrong_user(client, token):
+def test_delete_user_wrong_user(client, other_user, token):
     response = client.delete(
-        '/users/322', headers={'Authorization': f'Bearer {token}'}
+        f'/users/{other_user.id}', headers={'Authorization': f'Bearer {token}'}
     )
 
     assert response.status_code == HTTPStatus.FORBIDDEN
